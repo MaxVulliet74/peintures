@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Galerie d'Art — Le Grand-Bornand</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --cream: #f5f0e8;
+      --dark: #1a1510;
+      --gold: #b8955a;
+      --gold-light: #d4b07a;
+      --brown: #4a3728;
+      --muted: #7a6a5a;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background-color: var(--cream); color: var(--dark); font-family: 'Cormorant Garamond', serif; font-weight: 300; overflow-x: hidden; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 4vw; transition: background 0.4s; }
+    nav.scrolled { background: rgba(245,240,232,0.93); backdrop-filter: blur(12px); box-shadow: 0 1px 0 rgba(184,149,90,0.2); }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-style: italic; color: var(--brown); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--brown); text-decoration: none; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--gold); }
+    @media (max-width: 600px) { .nav-links { display: none; } }
+
+    /* HERO */
+    header { position: relative; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+    header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(184,149,90,0.12) 0%, transparent 70%), repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(184,149,90,0.07) 60px), repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(184,149,90,0.07) 60px); }
+    .header-ornament { font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold); margin-bottom: 2rem; opacity: 0; animation: fadeUp 1s ease 0.3s forwards; }
+    header h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 8vw, 7rem); font-weight: 400; line-height: 1.05; opacity: 0; animation: fadeUp 1s ease 0.5s forwards; }
+    header h1 em { font-style: italic; color: var(--gold); }
+    .header-sub { margin-top: 1.5rem; font-size: 1.15rem; color: var(--muted); letter-spacing: 0.1em; opacity: 0; animation: fadeUp 1s ease 0.7s forwards; }
+    .scroll-cue { position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.4rem; color: var(--gold); font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0; animation: fadeUp 1s ease 1s forwards; }
+    .scroll-cue::after { content: ''; width: 1px; height: 40px; background: linear-gradient(to bottom, var(--gold), transparent); animation: pulse 2s ease-in-out infinite; }
+
+    /* DIVIDER */
+    .divider { display: flex; align-items: center; gap: 1.5rem; margin: 4rem auto; max-width: 300px; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--gold)); }
+    .divider::after { background: linear-gradient(to left, transparent, var(--gold)); }
+    .divider span { color: var(--gold); font-size: 1.2rem; }
+
+    /* GALLERY SECTION */
+    .gallery-section { padding: 2rem 5vw 6rem; max-width: 1400px; margin: 0 auto; }
+    .section-label { text-align: center; font-size: 0.72rem; letter-spacing: 0.45em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+    .section-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3.2rem); text-align: center; font-weight: 400; margin-bottom: 3.5rem; color: var(--brown); }
+
+    /* UPLOAD ZONE */
+    .upload-zone { border: 2px dashed rgba(184,149,90,0.4); padding: 2.5rem; text-align: center; cursor: pointer; transition: border-color 0.3s, background 0.3s; background: rgba(184,149,90,0.03); margin-bottom: 3rem; }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--gold); background: rgba(184,149,90,0.08); }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .upload-text { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--brown); margin-bottom: 0.4rem; }
+    .upload-sub { font-size: 0.82rem; color: var(--muted); letter-spacing: 0.1em; }
+    #fileInput { display: none; }
+
+    /* GRID */
+    .gallery-grid { columns: 3; column-gap: 1.5rem; }
+    @media (max-width: 900px) { .gallery-grid { columns: 2; } }
+    @media (max-width: 560px) { .gallery-grid { columns: 1; } }
+
+    .artwork-card { break-inside: avoid; margin-bottom: 1.5rem; position: relative; cursor: pointer; }
+    .artwork-frame { position: relative; overflow: hidden; background: var(--dark); }
+    .artwork-frame::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(184,149,90,0.35); z-index: 2; pointer-events: none; transition: inset 0.5s ease; }
+    .artwork-card:hover .artwork-frame::before { inset: 4px; }
+    .artwork-img { width: 100%; display: block; transition: transform 0.7s ease, filter 0.5s ease; object-fit: cover; }
+    .artwork-card:hover .artwork-img { transform: scale(1.04); filter: brightness(0.8); }
+    .artwork-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem; background: linear-gradient(to top, rgba(26,21,16,0.85) 0%, transparent 60%); opacity: 0; transition: opacity 0.4s ease; z-index: 3; }
+    .artwork-card:hover .artwork-overlay { opacity: 1; }
+    .artwork-title-hover { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; font-style: italic; }
+    .artwork-medium-overlay { font-size: 0.8rem; color: var(--gold-light); letter-spacing: 0.15em; margin-top: 0.3rem; }
+    .artwork-info { padding: 1rem 0.5rem 0.5rem; }
+    .artwork-info-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-style: italic; color: var(--brown); }
+    .artwork-details { display: flex; justify-content: space-between; align-items: center; margin-top: 0.3rem; }
+    .artwork-meta { font-size: 0.78rem; color: var(--muted); }
+    .artwork-price { font-size: 0.85rem; color: var(--gold); font-weight: 500; }
+
+    /* Edit hint */
+    .edit-hint { font-size: 0.68rem; color: var(--gold); letter-spacing: 0.15em; margin-top: 0.5rem; opacity: 0; transition: opacity 0.3s; text-transform: uppercase; }
+    .artwork-card:hover .edit-hint { opacity: 1; }
+
+    /* Delete button */
+    .card-delete { position: absolute; top: 10px; right: 10px; z-index: 10; background: rgba(10,8,5,0.75); color: #fff; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.75rem; display: none; align-items: center; justify-content: center; transition: background 0.2s; }
+    .artwork-card:hover .card-delete { display: flex; }
+    .card-delete:hover { background: rgba(180,40,40,0.9); }
+
+    /* MODAL */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(10,8,5,0.78); backdrop-filter: blur(6px); z-index: 200; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--cream); max-width: 520px; width: 90vw; padding: 2.5rem; position: relative; animation: fadeUp 0.35s ease; }
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--brown); margin-bottom: 1.8rem; }
+    .modal-preview { width: 100%; max-height: 220px; object-fit: contain; display: block; margin-bottom: 1.5rem; border: 1px solid rgba(184,149,90,0.2); background: #eee; }
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; font-size: 0.68rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+    .form-group input { width: 100%; border: none; border-bottom: 1px solid rgba(74,55,40,0.25); background: transparent; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; color: var(--dark); padding: 0.4rem 0; outline: none; transition: border-color 0.3s; }
+    .form-group input:focus { border-color: var(--gold); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .modal-actions { display: flex; gap: 1rem; margin-top: 2rem; justify-content: flex-end; }
+    .btn { font-family: 'Cormorant Garamond', serif; font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; padding: 0.75rem 1.8rem; cursor: pointer; border: none; transition: all 0.3s; }
+    .btn-primary { background: var(--dark); color: var(--cream); }
+    .btn-primary:hover { background: var(--brown); }
+    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid rgba(74,55,40,0.2); }
+    .btn-secondary:hover { color: var(--dark); border-color: var(--dark); }
+    .modal-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--muted); }
+    .modal-close:hover { color: var(--dark); }
+
+    /* ABOUT */
+    .about-strip { background: var(--dark); color: var(--cream); padding: 5rem 8vw; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    @media (max-width: 700px) { .about-strip { grid-template-columns: 1fr; gap: 2rem; } }
+    .about-eyebrow { font-size: 0.7rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+    .about-title { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 400; line-height: 1.2; margin-bottom: 1.5rem; }
+    .about-title em { color: var(--gold); font-style: italic; }
+    .about-body { font-size: 1.05rem; line-height: 1.9; color: rgba(245,240,232,0.75); }
+    .about-quote { border-left: 2px solid var(--gold); padding-left: 2rem; font-family: 'Playfair Display', serif; font-style: italic; font-size: 1.5rem; line-height: 1.5; color: rgba(245,240,232,0.9); }
+
+    /* FOOTER */
+    footer { background: #0e0b08; color: var(--cream); padding: 5rem 8vw 3rem; }
+    .footer-top { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; padding-bottom: 3rem; border-bottom: 1px solid rgba(184,149,90,0.2); }
+    @media (max-width: 700px) { .footer-top { grid-template-columns: 1fr; gap: 2rem; } }
+    .footer-brand { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 400; color: var(--gold-light); margin-bottom: 0.8rem; }
+    .footer-tagline { font-size: 0.85rem; color: var(--muted); line-height: 1.7; }
+    .footer-col-title { font-size: 0.68rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.4rem; }
+    .contact-item { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.2rem; }
+    .contact-icon { width: 36px; height: 36px; border: 1px solid rgba(184,149,90,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--gold); }
+    .contact-label { font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+    .contact-value { font-size: 0.95rem; color: var(--cream); line-height: 1.5; }
+    .contact-value a { color: var(--gold-light); text-decoration: none; transition: color 0.3s; }
+    .contact-value a:hover { color: #fff; }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 2rem; font-size: 0.78rem; color: var(--muted); flex-wrap: wrap; gap: 1rem; }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
+
+    /* Empty state */
+    .empty-gallery { text-align: center; padding: 2rem 0 1rem; color: var(--muted); font-style: italic; font-size: 1.05rem; }
+  </style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-logo">Galerie</div>
+  <ul class="nav-links">
+    <li><a href="#oeuvres">Œuvres</a></li>
+    <li><a href="#artiste">Artiste</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<header>
+  <p class="header-ornament">Galerie d'Art · Le Grand-Bornand</p>
+  <h1>L'art prend <em>vie</em><br>dans les Alpes</h1>
+  <p class="header-sub">Peintures originales — Huile, Aquarelle &amp; Acrylique</p>
+  <div class="scroll-cue">Découvrir</div>
+</header>
+
+<section id="oeuvres" class="gallery-section">
+  <div class="divider"><span>✦</span></div>
+  <p class="section-label reveal">Collection</p>
+  <h2 class="section-title reveal">Œuvres à l'exposition</h2>
+
+  <!-- Zone d'upload -->
+  <div class="upload-zone reveal" id="uploadZone">
+    <input type="file" id="fileInput" accept="image/*" multiple/>
+    <div class="upload-icon">🖼️</div>
+    <div class="upload-text">Ajouter un ou plusieurs tableaux</div>
+    <div class="upload-sub">Cliquez ici ou glissez vos photos · JPG, PNG, WEBP</div>
+  </div>
+
+  <div class="gallery-grid" id="galleryGrid"></div>
+  <p class="empty-gallery" id="emptyMsg">Aucune œuvre pour l'instant — ajoutez votre premier tableau ci-dessus.</p>
+</section>
+
+<section id="artiste" class="about-strip">
+  <div class="reveal">
+    <p class="about-eyebrow">L'Artiste</p>
+    <h2 class="about-title">Une passion pour la <em>lumière alpine</em></h2>
+    <p class="about-body">Peintre installée au cœur du Grand-Bornand, je puise mon inspiration dans les paysages changeants des Alpes : la lumière rasante sur les sommets, les couleurs de l'automne dans les forêts, la sérénité des lacs de montagne. Chaque tableau est une invitation à contempler la beauté du monde naturel qui nous entoure.</p>
+  </div>
+  <div class="reveal">
+    <blockquote class="about-quote">« Peindre, c'est apprendre à voir vraiment — pas seulement regarder, mais ressentir la lumière dans chaque recoin du paysage. »</blockquote>
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="footer-top">
+    <div class="reveal">
+      <div class="footer-brand">Galerie<br><em style="font-style:italic;font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold-light)">au Grand-Bornand</em></div>
+      <p class="footer-tagline">Peintures originales de paysages alpins.<br>Œuvres disponibles à l'atelier et sur rendez-vous.<br>Commandes et créations sur mesure acceptées.</p>
+    </div>
+    <div class="reveal">
+      <p class="footer-col-title">Contact</p>
+      <div class="contact-item">
+        <div class="contact-icon">✆</div>
+        <div>
+          <div class="contact-label">Téléphone</div>
+          <div class="contact-value"><a href="tel:0612812498">06 12 81 24 98</a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">✉</div>
+        <div>
+          <div class="contact-label">Email</div>
+          <div class="contact-value"><a href="mailto:cocoemma@orange.fr">cocoemma@orange.fr</a></div>
+        </div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-icon">⌖</div>
+        <div>
+          <div class="contact-label">Adresse</div>
+          <div class="contact-value">719 Route du Croix<br>74450 Le Grand-Bornand</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2024 Galerie au Grand-Bornand — Tous droits réservés</span>
+    <span style="color:var(--gold)">✦</span>
+    <span>Haute-Savoie · France</span>
+  </div>
+</footer>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <h2 class="modal-title" id="modalHeading">Nouveau tableau</h2>
+    <img id="modalPreview" class="modal-preview" src="" alt="Aperçu"/>
+    <div class="form-group">
+      <label>Titre de l'œuvre</label>
+      <input type="text" id="fieldTitle" placeholder="ex : Lac de montagne au crépuscule"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Technique</label>
+        <input type="text" id="fieldMedium" placeholder="ex : Huile sur toile"/>
+      </div>
+      <div class="form-group">
+        <label>Dimensions</label>
+        <input type="text" id="fieldSize" placeholder="ex : 60 × 80 cm"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Année</label>
+        <input type="text" id="fieldYear" placeholder="ex : 2024"/>
+      </div>
+      <div class="form-group">
+        <label>Prix (facultatif)</label>
+        <input type="text" id="fieldPrice" placeholder="ex : 450 €"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="modalCancel">Annuler</button>
+      <button class="btn btn-primary" id="modalSave">Ajouter à la galerie</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // NAV
+  const navEl = document.getElementById('nav');
+  window.addEventListener('scroll', () => navEl.classList.toggle('scrolled', window.scrollY > 80));
+
+  // Reveal on scroll
+  const revealEls = document.querySelectorAll('.reveal');
+  const revObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revObs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  revealEls.forEach(el => revObs.observe(el));
+
+  // State
+  let currentImgSrc = null;
+  let editTarget = null;   // card being edited, or null for new
+  let pendingQueue = [];   // list of {src} waiting to be added
+
+  const zone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const grid = document.getElementById('galleryGrid');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const backdrop = document.getElementById('modalBackdrop');
+
+  // Upload zone interactions
+  zone.addEventListener('click', () => fileInput.click());
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag-over'); processFiles(e.dataTransfer.files); });
+  fileInput.addEventListener('change', () => { processFiles(fileInput.files); fileInput.value = ''; });
+
+  function processFiles(files) {
+    const imgs = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imgs.length) return;
+    let loaded = 0;
+    imgs.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        pendingQueue.push(e.target.result);
+        loaded++;
+        if (loaded === imgs.length) processQueue();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function processQueue() {
+    if (!pendingQueue.length) return;
+    currentImgSrc = pendingQueue.shift();
+    editTarget = null;
+    openModal('Nouveau tableau', currentImgSrc, '', '', '', '', '');
+  }
+
+  // Modal
+  const modalHeading = document.getElementById('modalHeading');
+  const modalPreview = document.getElementById('modalPreview');
+  const fieldTitle   = document.getElementById('fieldTitle');
+  const fieldMedium  = document.getElementById('fieldMedium');
+  const fieldSize    = document.getElementById('fieldSize');
+  const fieldYear    = document.getElementById('fieldYear');
+  const fieldPrice   = document.getElementById('fieldPrice');
+  const modalSaveBtn = document.getElementById('modalSave');
+
+  function openModal(heading, imgSrc, title, medium, size, year, price) {
+    modalHeading.textContent = heading;
+    modalPreview.src = imgSrc;
+    fieldTitle.value  = title;
+    fieldMedium.value = medium;
+    fieldSize.value   = size;
+    fieldYear.value   = year;
+    fieldPrice.value  = price;
+    modalSaveBtn.textContent = editTarget ? 'Enregistrer' : 'Ajouter à la galerie';
+    backdrop.classList.add('open');
+    setTimeout(() => fieldTitle.focus(), 100);
+  }
+
+  function closeModal() {
+    backdrop.classList.remove('open');
+    editTarget = null;
+    currentImgSrc = null;
+  }
+
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click', closeModal);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+
+  modalSaveBtn.addEventListener('click', () => {
+    const title  = fieldTitle.value.trim()  || 'Sans titre';
+    const medium = fieldMedium.value.trim();
+    const size   = fieldSize.value.trim();
+    const year   = fieldYear.value.trim();
+    const price  = fieldPrice.value.trim();
+
+    if (editTarget) {
+      // Update existing card
+      updateCard(editTarget, title, medium, size, year, price);
+    } else {
+      // Add new card
+      createCard(currentImgSrc, title, medium, size, year, price);
+    }
+    closeModal();
+    updateEmptyMsg();
+    // Continue queue
+    processQueue();
+  });
+
+  function mediumFull(medium, size) {
+    return [medium, size].filter(Boolean).join(' · ');
+  }
+
+  function createCard(imgSrc, title, medium, size, year, price) {
+    const card = document.createElement('div');
+    card.className = 'artwork-card';
+    card._data = { imgSrc, title, medium, size, year, price };
+    renderCard(card);
+    grid.appendChild(card);
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    setTimeout(() => { card.style.transition = 'opacity 0.5s ease, transform 0.5s ease'; card.style.opacity = '1'; card.style.transform = 'none'; }, 30);
+  }
+
+  function renderCard(card) {
+    const { imgSrc, title, medium, size, year, price } = card._data;
+    const mf = mediumFull(medium, size);
+    const meta = [mf, year].filter(Boolean).join(' · ');
+    card.innerHTML = `
+      <button class="card-delete" title="Supprimer">✕</button>
+      <div class="artwork-frame">
+        <img class="artwork-img" src="${imgSrc}" alt="${title}"/>
+        <div class="artwork-overlay">
+          <div class="artwork-title-hover">${title}</div>
+          ${mf ? '<div class="artwork-medium-overlay">' + mf + '</div>' : ''}
+        </div>
+      </div>
+      <div class="artwork-info">
+        <div class="artwork-info-title">${title}</div>
+        <div class="artwork-details">
+          <span class="artwork-meta">${meta}</span>
+          ${price ? '<span class="artwork-price">' + price + '</span>' : ''}
+        </div>
+        <div class="edit-hint">✎ Cliquer pour modifier</div>
+      </div>`;
+
+    // Click info to edit
+    card.querySelector('.artwork-info').addEventListener('click', e => {
+      if (e.target.classList.contains('card-delete')) return;
+      editTarget = card;
+      currentImgSrc = card._data.imgSrc;
+      openModal('Modifier le tableau', card._data.imgSrc, card._data.title, card._data.medium, card._data.size, card._data.year, card._data.price);
+    });
+
+    // Delete
+    card.querySelector('.card-delete').addEventListener('click', e => {
+      e.stopPropagation();
+      if (confirm('Supprimer ce tableau de la galerie ?')) {
+        card.style.transition = 'opacity 0.3s'; card.style.opacity = '0';
+        setTimeout(() => { card.remove(); updateEmptyMsg(); }, 300);
+      }
+    });
+  }
+
+  function updateCard(card, title, medium, size, year, price) {
+    card._data = { ...card._data, title, medium, size, year, price };
+    renderCard(card);
+  }
+
+  function updateEmptyMsg() {
+    emptyMsg.style.display = grid.children.length === 0 ? 'block' : 'none';
+  }
+
+  updateEmptyMsg();
+</script>
+</body>
+</html>
